@@ -24,6 +24,7 @@
         android:textColor="@android:color/black" />
 
     <TextView
+        android:id="@+id/tvCountDown"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_alignParentEnd="true"
@@ -33,7 +34,7 @@
         android:textSize="40sp" />
 
     <TextView
-        android:id="@+id/tvQuestions"
+        android:id="@+id/tvQuestion"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_above="@+id/rgOptions"
