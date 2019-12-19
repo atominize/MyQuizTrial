@@ -16,8 +16,8 @@ public class MainActivity extends AppCompatActivity {
 
     public static final int REQUEST_CODE_QUIZ = 1;
 
-    public static final String SHAREP_PREFS = "sharedPrefs";
-    public static final String KEY_HIGHSCORE = "keyHighScore";
+    public static final String SHARED_PREFS = "sharedPrefs";
+    public static final String KEY_HIGH_SCORE = "keyHighScore";
 
     private TextView mHighScore;
 
@@ -61,8 +61,8 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void loadHighScore() {
-        SharedPreferences preferences = getSharedPreferences(SHAREP_PREFS, MODE_PRIVATE);
-        highScore = preferences.getInt(KEY_HIGHSCORE, 0);
+        SharedPreferences preferences = getSharedPreferences(SHARED_PREFS, MODE_PRIVATE);
+        highScore = preferences.getInt(KEY_HIGH_SCORE, 0);
         mHighScore.setText("HighScore: " + highScore);
     }
 
@@ -70,9 +70,9 @@ public class MainActivity extends AppCompatActivity {
         highScore = score;
         mHighScore.setText("HighScore: " + highScore);
 
-        SharedPreferences preferences = getSharedPreferences(SHAREP_PREFS, MODE_PRIVATE);
+        SharedPreferences preferences = getSharedPreferences(SHARED_PREFS, MODE_PRIVATE);
         SharedPreferences.Editor editor = preferences.edit();
-        editor.putInt(KEY_HIGHSCORE, highScore);
+        editor.putInt(KEY_HIGH_SCORE, highScore);
         editor.apply();
     }
 }
