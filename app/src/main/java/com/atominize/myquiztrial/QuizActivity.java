@@ -2,6 +2,7 @@ package com.atominize.myquiztrial;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.content.Intent;
 import android.content.res.ColorStateList;
 import android.graphics.Color;
 import android.os.Bundle;
@@ -19,6 +20,8 @@ import java.util.List;
 
 public class QuizActivity extends AppCompatActivity {
 
+    public static final String EXTRA_SCORE = "extraScore";
+
     private TextView mQuestion, mScore, mQuestionCount, mCountDown;
     private RadioGroup radioGroup;
     private RadioButton rButton1, rButton2, rButton3;
@@ -31,6 +34,7 @@ public class QuizActivity extends AppCompatActivity {
 
     private int score;
     private boolean answered;
+    private long backPressedTime;
 
     private ColorStateList textColourDefaultRb;
 
@@ -91,12 +95,15 @@ public class QuizActivity extends AppCompatActivity {
         switch (currentQuestion.getAnswerNumber()) {
             case 1:
                 rButton1.setTextColor(Color.GREEN);
+                mQuestion.setText("Answer A is correct");
                 break;
             case 2:
                 rButton2.setTextColor(Color.GREEN);
+                mQuestion.setText("Answer B is correct");
                 break;
             case 3:
                 rButton3.setTextColor(Color.GREEN);
+                mQuestion.setText("Answer C is correct");
                 break;
         }
 
@@ -125,7 +132,16 @@ public class QuizActivity extends AppCompatActivity {
             mQuestionCount.setText("Question: " + questionCounter + "/" + questionCountTotal);
             answered = false;
             mConfirmNext.setText("Confirm");
+        } else {
+            finishQuiz();
         }
+    }
+
+    private void finishQuiz() {
+        Intent intent = new Intent();
+        intent.putExtra(EXTRA_SCORE, score);
+        setResult(RESULT_OK, intent);
+        finish();
     }
 
     private void initViews() {
@@ -138,5 +154,17 @@ public class QuizActivity extends AppCompatActivity {
         rButton2 = findViewById(R.id.rbOption2);
         rButton3 = findViewById(R.id.rbOption3);
         mConfirmNext = findViewById(R.id.btConfirmNext);
+    }
+
+    @Override
+    public void onBackPressed() {
+        backPressedTime = System.currentTimeMillis();
+        if (backPressedTime + 2000 > System.currentTimeMillis()) {
+            finishQuiz();
+        } else {
+            Toast.makeText(this, "Press back again to finish", Toast.LENGTH_SHORT).show();
+        }
+
+        backPressedTime = System.currentTimeMillis();
     }
 }
