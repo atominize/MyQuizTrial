@@ -1,11 +1,14 @@
 package com.atominize.myquiztrial;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.content.Intent;
 import android.content.res.ColorStateList;
 import android.graphics.Color;
 import android.os.Bundle;
+import android.os.CountDownTimer;
+import android.os.PersistableBundle;
 import android.view.View;
 import android.widget.Button;
 import android.widget.RadioButton;
@@ -15,19 +18,28 @@ import android.widget.Toast;
 
 import com.atominize.myquiztrial.models.Question;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
 
 public class QuizActivity extends AppCompatActivity {
 
     public static final String EXTRA_SCORE = "extraScore";
+    public static final long COUNTDOWN_IN_MILLIS = 30000;
+
+    public static final String FREEZE_SCORE = "freezeScore";
+    public static final String FREEZE_QUESTION_COUNT = "freezeQuestionCount";
+    public static final String FREEZE_MILLIS_LEFT = "freezeMillisLeft";
+    public static final String FREEZE_ANSWERED = "freezeAnswered";
+    public static final String FREEZE_QUESTION_LIST = "freezeQuestionList";
 
     private TextView mQuestion, mScore, mQuestionCount, mCountDown;
     private RadioGroup radioGroup;
     private RadioButton rButton1, rButton2, rButton3;
     private Button mConfirmNext;
 
-    private List<Question> questionList;
+    private ArrayList<Question> questionList;
     private int questionCounter;
     private int questionCountTotal;
     private Question currentQuestion;
@@ -35,8 +47,12 @@ public class QuizActivity extends AppCompatActivity {
     private int score;
     private boolean answered;
     private long backPressedTime;
+    private long timeLeftInMillis;
 
     private ColorStateList textColourDefaultRb;
+    private ColorStateList mColorCountdown;
+
+    private CountDownTimer countDownTimer;
 
 
     @Override
@@ -47,14 +63,32 @@ public class QuizActivity extends AppCompatActivity {
         initViews();
 
         textColourDefaultRb = rButton1.getTextColors();
+        mColorCountdown = mCountDown.getTextColors();
 
-        QuizDbHelper dbHelper = new QuizDbHelper(this);
-        questionList = dbHelper.getAllQuestions();
+        if (savedInstanceState == null) {
+            QuizDbHelper dbHelper = new QuizDbHelper(this);
+            questionList = dbHelper.getAllQuestions();
 
-        questionCountTotal = questionList.size();
-        Collections.shuffle(questionList);
+            questionCountTotal = questionList.size();
+            Collections.shuffle(questionList);
 
-        showNextQuestions();
+            showNextQuestions();
+        } else {
+            questionList = savedInstanceState.getParcelableArrayList(FREEZE_QUESTION_LIST);
+//            questionCountTotal = questionList.size();
+            questionCounter = savedInstanceState.getInt(FREEZE_QUESTION_COUNT);
+//            currentQuestion = questionList.get(questionCounter - 1);
+            score = savedInstanceState.getInt(FREEZE_SCORE);
+            timeLeftInMillis = savedInstanceState.getLong(FREEZE_MILLIS_LEFT);
+            answered = savedInstanceState.getBoolean(FREEZE_ANSWERED);
+
+            if (!answered) {
+                startCountDown();
+            } else {
+                updateCountDownTextView();
+                showSolution();
+            }
+        }
 
         mConfirmNext.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -75,6 +109,8 @@ public class QuizActivity extends AppCompatActivity {
 
     private void checkAnswer() {
         answered = true;
+
+        countDownTimer.cancel();
 
         RadioButton radioButtonSelected = findViewById(radioGroup.getCheckedRadioButtonId());
         int answerNumber = radioGroup.indexOfChild(radioButtonSelected) + 1;
@@ -132,8 +168,43 @@ public class QuizActivity extends AppCompatActivity {
             mQuestionCount.setText("Question: " + questionCounter + "/" + questionCountTotal);
             answered = false;
             mConfirmNext.setText("Confirm");
+
+            timeLeftInMillis = COUNTDOWN_IN_MILLIS;
+            startCountDown();
         } else {
             finishQuiz();
+        }
+    }
+
+    private void startCountDown() {
+        countDownTimer = new CountDownTimer(timeLeftInMillis, 1000) {
+            @Override
+            public void onTick(long l) {
+                timeLeftInMillis = l;
+                updateCountDownTextView();
+            }
+
+            @Override
+            public void onFinish() {
+                timeLeftInMillis = 0;
+                updateCountDownTextView();
+                checkAnswer();
+            }
+        }.start();
+    }
+
+    private void updateCountDownTextView() {
+        int minute = (int) ((timeLeftInMillis / 1000) / 60);
+        int seconds = (int) ((timeLeftInMillis / 1000) % 60);
+
+        String timeFormatted = String.format(Locale.getDefault(), "%02d:%02d", minute, seconds);
+
+        mCountDown.setText(timeFormatted);
+
+        if (timeLeftInMillis < 10000) {
+            mCountDown.setTextColor(Color.RED);
+        } else {
+            mCountDown.setTextColor(mColorCountdown);
         }
     }
 
@@ -166,5 +237,25 @@ public class QuizActivity extends AppCompatActivity {
         }
 
         backPressedTime = System.currentTimeMillis();
+    }
+
+    @Override
+    protected void onDestroy()    {
+        super.onDestroy();
+
+        if (countDownTimer != null) {
+            countDownTimer.cancel();
+        }
+    }
+
+    @Override
+    public void onSaveInstanceState(@NonNull Bundle outState, @NonNull PersistableBundle outPersistentState) {
+        super.onSaveInstanceState(outState, outPersistentState);
+
+        outState.putInt(FREEZE_SCORE, score);
+        outState.putInt(FREEZE_QUESTION_COUNT, questionCounter);
+        outState.putLong(FREEZE_MILLIS_LEFT, timeLeftInMillis);
+        outState.putBoolean(FREEZE_ANSWERED, answered);
+        outState.putParcelableArrayList(FREEZE_QUESTION_LIST, questionList);
     }
 }
